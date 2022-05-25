@@ -1,0 +1,46 @@
+{
+	"name": "backend-template",
+	"version": "0.0.2",
+	"private": true,
+	"scripts": {
+		"start": "node ./bin/www",
+		"build": "nodemon ./bin/www"
+	},
+	"dependencies": {
+		"@flexsolver/flexqp2": "^2.12.3",
+		"@flexsolver/flexrb": "^1.0.7",
+		"axios": "^0.19.2",
+		"body-parser": "^1.18.3",
+		"cloudinary": "^1.30.0",
+		"cookie-parser": "~1.4.3",
+		"cors": "^2.8.4",
+		"debug": "~2.6.9",
+		"decimal.js": "^10.2.0",
+		"dotenv": "^16.0.0",
+		"eslint": "^7.21.0",
+		"express": "~4.16.0",
+		"express-rate-limit": "^5.1.3",
+		"express-session": "^1.17.0",
+		"fcm-push": "^1.1.3",
+		"generate-password": "^1.6.0",
+		"googleapis": "^95.0.0",
+		"http-errors": "~1.6.2",
+		"joi": "^17.6.0",
+		"jsonwebtoken": "^8.5.1",
+		"moment": "^2.24.0",
+		"morgan": "~1.9.0",
+		"multer": "^1.4.2",
+		"mysql-import": "^4.0.24",
+		"node-persist": "^3.0.5",
+		"node-schedule": "^2.0.0",
+		"nodemailer": "^6.7.2",
+		"password-hash": "^1.2.2",
+		"redis": "^4.0.4",
+		"system-sleep": "^1.3.6",
+		"telegraf": "^4.7.0",
+		"uuid": "^3.3.3"
+	},
+	"devDependencies": {
+		"nodemon": "^1.19.4"
+	}
+}
