@@ -1,0 +1,50 @@
+kind: pipeline
+type: docker
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: restore-cache
+    image: drillster/drone-volume-cache
+    pull: if-not-exists
+    settings:
+      restore: true
+      mount:
+        - ./node_modules
+    volumes:
+    - name: cache
+      path: /cache
+      
+  - name: npm i and build
+    image: nikolaik/python-nodejs:python3.8-nodejs14
+    pull: if-not-exists
+    commands:
+        - rm package-lock.json
+        - npm i
+        - npm run build
+
+  - name: rebuild-cache
+    image: drillster/drone-volume-cache
+    pull: if-not-exists
+    settings:
+      rebuild: true
+      mount:
+        - ./node_modules
+    volumes:
+    - name: cache
+      path: /cache
+      
+volumes:
+  - name: cache
+    host:
+      path: /tmp/drone/cache/MIND_AR_CMS/node_modules
+        
+trigger:
+  branch:
+    - dev
+  event:
+    - push
+    - pull-request
