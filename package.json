@@ -9,8 +9,10 @@
 	"dependencies": {
 		"@flexsolver/flexqp2": "^2.12.3",
 		"@flexsolver/flexrb": "^1.0.7",
+		"and": "0.0.3",
 		"axios": "^0.19.2",
 		"body-parser": "^1.18.3",
+		"build": "^0.1.4",
 		"cloudinary": "^1.30.0",
 		"cookie-parser": "~1.4.3",
 		"cors": "^2.8.4",
