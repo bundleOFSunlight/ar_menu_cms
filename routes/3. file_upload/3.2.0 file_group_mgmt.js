@@ -3,6 +3,7 @@ const router = express.Router();
 const rb = require(`@flexsolver/flexrb`);
 const qp = require(`@flexsolver/flexqp2`);
 const { v4: uuidv4 } = require('uuid');
+const id_helper = require(`../../controllers/helpers/id_helper`);
 
 // 3.1.0
 router.post(`/new_project`, async function (req, res, next) {
@@ -105,6 +106,7 @@ router.get(`/project_file/:id`, async function (req, res, next) {
     }
 });
 
+// 3.6.0
 router.get(`/uuid/:id`, async function (req, res, next) {
     let con;
     try {
@@ -122,5 +124,46 @@ router.get(`/uuid/:id`, async function (req, res, next) {
     }
 });
 
+// 3.7.0
+router.post(`/project`, async function (req, res, next) {
+    let con;
+    try {
+        let body = { ...req.body };
+        body.user_id = req.user.id;
+        con = await qp.connectWithTbegin();
+        const project = await qp.selectFirst(`select * from project where is_available and project_name = ?`,
+            [body.project_name], con);
+        if (project) {
+            throw new Error(`project name already exists.`);
+        }
+        body.public_key = uuidv4();
+        // insert into project
+        const id = await id_helper(con, `project`, true);
+        let project_builder = await qp.getBuilderSingleton(`project`, con);
+        const project_dao = project_builder.construct(body);
+        project_dao.id = id;
+        await qp.insert(`project`, project_dao, con);
+        // mass insert into files
+        const videoList = []
+        let i = 0;
+        for (const item of body.imageList) {
+            i++;
+            const video_body = {};
+            video_body.arrangement = i;
+            video_body.project_id = id;
+            video_body.file_name = item.file_name;
+            video_body.file_url = item.file_url;
+            let project_builder = await qp.getBuilderSingleton(`project_attachment`, con);
+            const project_dao = project_builder.construct(video_body);
+            videoList.push(project_dao)
+        }
+        await qp.bulkInsert(`project_attachment`, videoList, [], con);
+        await qp.commitAndCloseConnection(con);
+        res.json(rb.build({}, `New prject created.`));
+    } catch (err) {
+        if (con) await qp.rollbackAndCloseConnection(con);
+        next(err);
+    }
+});
 
 module.exports = router;

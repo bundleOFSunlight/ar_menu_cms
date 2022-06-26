@@ -38,7 +38,6 @@ async function resetPassword(user, token, con) {
         </div> `;
         await sendGoogleEmail(user.email, subject, content, `RESET PASSWORD`, con)
     } catch (err) {
-        // if (con) await qp.rollbackAndCloseConnection(con);
         throw err;
     }
 }
