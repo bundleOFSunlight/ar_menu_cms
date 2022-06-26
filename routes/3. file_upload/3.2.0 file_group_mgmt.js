@@ -151,8 +151,9 @@ router.post(`/project`, async function (req, res, next) {
             const video_body = {};
             video_body.arrangement = i;
             video_body.project_id = id;
-            video_body.file_name = item.file_name;
-            video_body.file_url = item.file_url;
+            video_body.file_name = item.name;
+            video_body.file_url = item.url;
+            video_body.file_size = item.size;
             let project_builder = await qp.getBuilderSingleton(`project_attachment`, con);
             const project_dao = project_builder.construct(video_body);
             videoList.push(project_dao)

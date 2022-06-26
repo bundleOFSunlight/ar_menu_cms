@@ -61,7 +61,7 @@ router.post(`/`, async function (req, res, next) {
                 JWT_SECRET,
             );
             // const longLive = `Regulatory:${uuidv4()}`;
-            await storage.setItem(uuidx, user, { ttl: (process.env.JWT_DEFAULT_TIME || 60 * 24) * 60 * 1000 });
+            await storage.setItem(uuidx, user, { ttl: (process.env.JWT_DEFAULT_TIME || 60) * 60 * 1000 });
 
             user.token = token;
             // user.longLive = longLive;
