@@ -5,39 +5,16 @@ const qp = require(`@flexsolver/flexqp2`);
 const { v4: uuidv4 } = require('uuid');
 const id_helper = require(`../../controllers/helpers/id_helper`);
 
-// 3.1.0
-router.post(`/new_project`, async function (req, res, next) {
-    let con;
-    try {
-        let body = { ...req.body };
-        con = await qp.connectWithTbegin();
-        const project = await qp.selectFirst(`select * from project where is_available and project_name = ?`,
-            [body.project_name], con);
-        if (project) {
-            throw new Error(`project name already exists.`);
-        }
-        body.public_key = uuidv4();
-        let project_builder = await qp.getBuilderSingleton(`project`, con);
-        const project_dao = project_builder.construct(body);
-        await qp.run(`insert into project set ?`, [project_dao], con);
-        await qp.commitAndCloseConnection(con);
-        res.json(rb.build({}, `New prject created.`));
-    } catch (err) {
-        if (con) await qp.rollbackAndCloseConnection(con);
-        next(err);
-    }
-});
 
 // 3.2.0
 router.post(`/datatable`, async function (req, res, next) {
     let con;
     try {
-        let body = { ...req.body };
-        con = await qp.connectWithTbegin();
-        const project = await qp.select(`select * from project where is_available order by id desc`,
-            [], con);
-        await qp.commitAndCloseConnection(con);
-        res.json(rb.build(project, `All prject Retrieved.`));
+        const body = { ...req.body }
+        const params = {}
+        const all_query = `select p.*, u.username from project p left join user u on p.user_id = u.id where p.is_available`;
+        const search_query = `${all_query} and (LOWER(contact_person) like concat('%', LOWER(:search), '%') or LOWER(project_name) like concat('%', LOWER(:search), '%'))`;
+        res.json(await rb.buildTable(body, search_query, all_query, params));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
@@ -124,7 +101,7 @@ router.get(`/uuid/:id`, async function (req, res, next) {
     }
 });
 
-// 3.7.0
+// 3.7.0 create api
 router.post(`/project`, async function (req, res, next) {
     let con;
     try {
