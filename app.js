@@ -63,7 +63,10 @@ app.use(
 
 initStorage();
 async function initStorage() {
-	await storage.init({ expiredInterval: 2 * 60 * 1000 }); // run every 2 minutes remove expired items
+	await storage.init({
+		logging: false,
+		expiredInterval: 2 * 60 * 1000, // run every 2 minutes remove expired items
+	});
 }
 
 function verifyToken(req, res, next) {
