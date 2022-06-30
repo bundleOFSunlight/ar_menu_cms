@@ -11,8 +11,15 @@ router.post(`/datatable`, async function (req, res, next) {
     let con;
     try {
         const body = { ...req.body }
-        const params = {}
-        const all_query = `select p.*, u.username from project p left join user u on p.user_id = u.id where p.is_available`;
+        const role = req.user.role;
+        let role_filter = ``;
+        if (role !== "ADMIN") {
+            role_filter += "and p.user_id = :user_id"
+        }
+        const params = {
+            user_id: req.user.id,
+        }
+        const all_query = `select p.*, u.username from project p left join user u on p.user_id = u.id where p.is_available ${role_filter}`;
         const search_query = `${all_query} and (LOWER(contact_person) like concat('%', LOWER(:search), '%') or LOWER(project_name) like concat('%', LOWER(:search), '%'))`;
         res.json(await rb.buildTable(body, search_query, all_query, params));
     } catch (err) {
@@ -70,7 +77,13 @@ router.get(`/project_file/:id`, async function (req, res, next) {
         con = await qp.connectWithTbegin();
         const project = await qp.selectFirst(`select * from project where is_available and id = ?`,
             [project_id], con);
+        // verify project
         if (!project) { throw new Error("Project not exist"); }
+        // verify user
+        const role = req.user.role;
+        if (role !== "ADMIN" && project.user_id !== req.user.id) {
+            throw new Error("Project not exist");
+        }
         const attachment = await qp.select(`select * from project_attachment 
         where is_available and project_id = ?`,
             [project.id], con);
