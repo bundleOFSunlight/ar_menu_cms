@@ -4,6 +4,7 @@ const rb = require(`@flexsolver/flexrb`);
 const qp = require(`@flexsolver/flexqp2`);
 const { v4: uuidv4 } = require('uuid');
 const id_helper = require(`../../controllers/helpers/id_helper`);
+const common_helper = require(`../../controllers/helpers/common_helper`);
 
 
 // 3.2.0
@@ -148,6 +149,59 @@ router.post(`/project`, async function (req, res, next) {
             const project_dao = project_builder.construct(video_body);
             videoList.push(project_dao)
         }
+        await qp.bulkInsert(`project_attachment`, videoList, [], con);
+        await qp.commitAndCloseConnection(con);
+        res.json(rb.build({}, `New prject created.`));
+    } catch (err) {
+        if (con) await qp.rollbackAndCloseConnection(con);
+        next(err);
+    }
+});
+
+router.put(`/project`, async function (req, res, next) {
+    let con;
+    try {
+        let body = { ...req.body };
+        body.user_id = req.user.id;
+        const id = body.id;
+        con = await qp.connectWithTbegin();
+        // Check exist
+        await common_helper.checkItemDuplicate(`project`, `project_name`, body.project_name, con, body.id);
+        // check accessible
+        const params = {
+            user_id: req.user.id,
+            id: id,
+        }
+        let user_filter = ``
+        if (req.user.role !== "ADMIN") {
+            user_filter = ` and user_id = :user_id`
+        }
+        const project = await qp.selectFirst(`select * from project where is_available and id = :id ${user_filter}`,
+            params, con);
+        if (!project) {
+            throw new Error(`Project not exist.`);
+        }
+        body.public_key = project.public_key;
+        // insert into project
+        let project_builder = await qp.getBuilderSingleton(`project`, con);
+        const project_dao = project_builder.construct(body);
+        await qp.update(`project`, project_dao, { id: id }, con);
+        // mass insert into files
+        const videoList = []
+        let i = 0;
+        for (const item of body.imageList) {
+            i++;
+            const video_body = {};
+            video_body.arrangement = i;
+            video_body.project_id = id;
+            video_body.file_name = item.name;
+            video_body.file_url = item.url;
+            video_body.file_size = item.size;
+            let project_builder = await qp.getBuilderSingleton(`project_attachment`, con);
+            const project_dao = project_builder.construct(video_body);
+            videoList.push(project_dao)
+        }
+        await qp.run(`delete from project_attachment where project_id = ? and is_available`, [id], con)
         await qp.bulkInsert(`project_attachment`, videoList, [], con);
         await qp.commitAndCloseConnection(con);
         res.json(rb.build({}, `New prject created.`));
