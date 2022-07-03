@@ -247,4 +247,25 @@ router.delete(`/project`, async function (req, res, next) {
     }
 });
 
+router.post(`/qr_code`, async function (req, res, next) {
+    let con;
+    try {
+        con = await qp.connectWithTbegin();
+        // const printer = new pdfPrinter(Roboto);
+        // const { doc_definition, invoice } = await this.orderService.createInvoicePdf(+order_id, req);
+        // const file_name = `Order_${order_id}_Invoice_${invoice.id}_` + moment().format('YYYYMMDDHHmmss') + '.pdf';
+        // const pdf_doc = printer.createPdfKitDocument(doc_definition);
+
+        // res.setHeader(`Content-Type`, `application/pdf`);
+        // res.setHeader(`Content-Disposition`, `attachment; filename=` + file_name);
+        // pdf_doc.pipe(res);
+        // pdf_doc.end();
+        await qp.commitAndCloseConnection(con);
+        res.json(rb.build({}, `Prject deleted.`));
+    } catch (err) {
+        if (con) await qp.rollbackAndCloseConnection(con);
+        next(err);
+    }
+});
+
 module.exports = router;
