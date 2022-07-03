@@ -5,6 +5,7 @@ const qp = require(`@flexsolver/flexqp2`);
 const { v4: uuidv4 } = require('uuid');
 const id_helper = require(`../../controllers/helpers/id_helper`);
 const common_helper = require(`../../controllers/helpers/common_helper`);
+const moment = require(`moment`);
 
 
 // 3.2.0
@@ -204,7 +205,42 @@ router.put(`/project`, async function (req, res, next) {
         await qp.run(`delete from project_attachment where project_id = ? and is_available`, [id], con)
         await qp.bulkInsert(`project_attachment`, videoList, [], con);
         await qp.commitAndCloseConnection(con);
-        res.json(rb.build({}, `New prject created.`));
+        res.json(rb.build({}, `Prject updated.`));
+    } catch (err) {
+        if (con) await qp.rollbackAndCloseConnection(con);
+        next(err);
+    }
+});
+
+router.delete(`/project`, async function (req, res, next) {
+    let con;
+    try {
+        let body = { ...req.body };
+        body.user_id = req.user.id;
+        const id = body.id;
+        con = await qp.connectWithTbegin();
+
+        // check accessible
+        const params = {
+            user_id: req.user.id,
+            id: id,
+        }
+        let user_filter = ``
+        if (req.user.role !== "ADMIN") {
+            user_filter = ` and user_id = :user_id`
+        }
+        const project = await qp.selectFirst(`select * from project where is_available and id = :id ${user_filter}`,
+            params, con);
+        if (!project) {
+            throw new Error(`Project not exist.`);
+        }
+        const polluted_name = `${project.project_name}_` + moment().format(`YYYYMMDDHHmmss`);
+        await qp.run(`update project set project_name = :polluted_name, is_available = false where id = :id`, { polluted_name: polluted_name, id: id }, con)
+        await qp.run(`update project_attachment set file_name = :puluted_name, is_available = false where project_id = :id`,
+            { puluted_name: polluted_name, id: id }, con)
+
+        await qp.commitAndCloseConnection(con);
+        res.json(rb.build({}, `Prject deleted.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
