@@ -53,6 +53,8 @@ Thumbs.db
 
 .env
 
+.node-persist
+
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml

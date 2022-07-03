@@ -1,8 +1,6 @@
 // this code should be using by frontend, and pass data returned to backend
 
 const cloudinary = require(`cloudinary`);
-const path = require(`path`);
-const fs = require(`fs`);
 const { v4: uuidv4 } = require('uuid');
 
 // To Clarissa: Config data should replace yours, in deployment, should use .env file to store config
@@ -20,7 +18,6 @@ async function uploader(file) {
         file_name = file_name.split('.');
         file_name = file_name[0]
         const image_path = file.path;
-        // let file_type = file.mimetype;
         let upload_dao = {
             resource_type: "auto", // resource_type: "auto"
             public_id: `mind_ar/${file_name}/${uuidv4()}`,
