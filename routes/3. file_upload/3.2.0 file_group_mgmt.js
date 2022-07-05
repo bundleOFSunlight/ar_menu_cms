@@ -5,8 +5,19 @@ const qp = require(`@flexsolver/flexqp2`);
 const { v4: uuidv4 } = require('uuid');
 const id_helper = require(`../../controllers/helpers/id_helper`);
 const common_helper = require(`../../controllers/helpers/common_helper`);
+const download_pdf = require(`../../controllers/pdf_generator/pdf_generator`);
+
 const moment = require(`moment`);
 
+const pdfPrinter = require(`pdfmake/src/printer`);
+const printer = new pdfPrinter({
+    Roboto: {
+        normal: "./fonts/Roboto-Regular.ttf",
+        bold: "./fonts/Roboto-Medium.ttf",
+        italics: "./fonts/Roboto-Italic.ttf",
+        bolditalics: "./fonts/Roboto-Italic.ttf",
+    },
+});
 
 // 3.2.0
 router.post(`/datatable`, async function (req, res, next) {
@@ -247,21 +258,25 @@ router.delete(`/project`, async function (req, res, next) {
     }
 });
 
-router.post(`/qr_code`, async function (req, res, next) {
+router.post(`/qr_code/:id`, async function (req, res, next) {
     let con;
+    const id = req.params.id;
     try {
         con = await qp.connectWithTbegin();
-        // const printer = new pdfPrinter(Roboto);
-        // const { doc_definition, invoice } = await this.orderService.createInvoicePdf(+order_id, req);
-        // const file_name = `Order_${order_id}_Invoice_${invoice.id}_` + moment().format('YYYYMMDDHHmmss') + '.pdf';
-        // const pdf_doc = printer.createPdfKitDocument(doc_definition);
-
-        // res.setHeader(`Content-Type`, `application/pdf`);
-        // res.setHeader(`Content-Disposition`, `attachment; filename=` + file_name);
-        // pdf_doc.pipe(res);
-        // pdf_doc.end();
+        const project = await qp.selectCheckFirst(`project`, { id: id }, con, function () {
+            throw new Error(`Project does not exist.`);
+        })
         await qp.commitAndCloseConnection(con);
-        res.json(rb.build({}, `Prject deleted.`));
+        const url = process.env.MENU_URL + `/${project.public_key}`;
+        const doc_definition = await download_pdf(url);
+        const file_name = `QR_CODE` + moment().format('YYYYMMDDHHmmss') + '.pdf';
+        const pdf_doc = printer.createPdfKitDocument(doc_definition);
+        res.setHeader(`Content-Type`, `application/pdf`);
+        res.setHeader(`Content-Disposition`, `attachment; filename=` + file_name);
+        pdf_doc.pipe(res);
+        pdf_doc.end();
+
+        // res.json(rb.build({}, `Prject deleted.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);

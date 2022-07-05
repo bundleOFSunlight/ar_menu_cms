@@ -33,6 +33,7 @@ const envVarsSchema = joi
         CLIENT_SECRET: joi.string().required(),
         REDIRECT_URL: joi.string().required(),
         REFRESH_TOKEN: joi.string().required(),
+        MENU_URL: joi.string().required(),
 
     })
     .unknown();
