@@ -21,7 +21,7 @@ router.get(`/file_obj/:key`, async function (req, res, next) {
         await qp.commitAndCloseConnection(con);
         const public_data = {
             data: result,
-            mind_file: project.mind_file_url
+            mind_file: project.mind_url
         }
         res.json(rb.build(public_data, `Prject Retrieved.`));
     } catch (err) {
