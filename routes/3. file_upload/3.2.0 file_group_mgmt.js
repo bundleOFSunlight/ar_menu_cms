@@ -258,7 +258,7 @@ router.delete(`/project`, async function (req, res, next) {
     }
 });
 
-router.post(`/qr_code/:id`, async function (req, res, next) {
+router.get(`/qr_code/:id`, async function (req, res, next) {
     let con;
     const id = req.params.id;
     try {
