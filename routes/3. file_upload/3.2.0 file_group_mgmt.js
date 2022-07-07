@@ -50,7 +50,7 @@ router.get(`/all_project/:id`, async function (req, res, next) {
         const project = await qp.selectFirst(`select * from project where is_available and id = ?`,
             [id], con);
         await qp.commitAndCloseConnection(con);
-        res.json(rb.build(project, `All prject Retrieved.`));
+        res.json(rb.build(project, `All project Retrieved.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
@@ -75,7 +75,7 @@ router.post(`/add_file`, async function (req, res, next) {
         const project_dao = project_builder.construct(body);
         await qp.run(`insert into project_attachment set ?`, [project_dao], con);
         await qp.commitAndCloseConnection(con);
-        res.json(rb.build({}, `New prject attachment added.`));
+        res.json(rb.build({}, `New project attachment added.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
@@ -102,7 +102,7 @@ router.get(`/project_file/:id`, async function (req, res, next) {
             [project.id], con);
         project.attachment = attachment;
         await qp.commitAndCloseConnection(con);
-        res.json(rb.build(project, `Prject Retrieved.`));
+        res.json(rb.build(project, `Project Retrieved.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
@@ -120,7 +120,7 @@ router.get(`/uuid/:id`, async function (req, res, next) {
         if (!project) { throw new Error("Project not exist"); }
         const api_key = project.public_key;
         await qp.commitAndCloseConnection(con);
-        res.json(rb.build(api_key, `Prject Retrieved.`));
+        res.json(rb.build(api_key, `Project Retrieved.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
@@ -163,7 +163,7 @@ router.post(`/project`, async function (req, res, next) {
         }
         await qp.bulkInsert(`project_attachment`, videoList, [], con);
         await qp.commitAndCloseConnection(con);
-        res.json(rb.build({}, `New prject created.`));
+        res.json(rb.build({}, `New project created.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
@@ -216,7 +216,7 @@ router.put(`/project`, async function (req, res, next) {
         await qp.run(`delete from project_attachment where project_id = ? and is_available`, [id], con)
         await qp.bulkInsert(`project_attachment`, videoList, [], con);
         await qp.commitAndCloseConnection(con);
-        res.json(rb.build({}, `Prject updated.`));
+        res.json(rb.build({}, `Project updated.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
@@ -251,7 +251,7 @@ router.delete(`/project`, async function (req, res, next) {
             { puluted_name: polluted_name, id: id }, con)
 
         await qp.commitAndCloseConnection(con);
-        res.json(rb.build({}, `Prject deleted.`));
+        res.json(rb.build({}, `Project deleted.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
@@ -275,7 +275,6 @@ router.get(`/qr_code/:id`, async function (req, res, next) {
         res.setHeader(`Content-Disposition`, `attachment; filename=` + file_name);
         pdf_doc.pipe(res);
         pdf_doc.end();
-
         // res.json(rb.build({}, `Prject deleted.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
