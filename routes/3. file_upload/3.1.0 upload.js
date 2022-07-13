@@ -15,7 +15,8 @@ router.post(`/`, upload.single('mind_ar'), async function (req, res, next) {
         req.setTimeout(0);
         let file = req.file;
         const result = await cloudinary.uploader(file)
-        res.json(rb.build({ url: result.url }, `File has been uploaded.`));
+        console.log(result)
+        res.json(rb.build({ url: result.secure_url }, `File has been uploaded.`));
     } catch (error) {
         next(error);
     }
