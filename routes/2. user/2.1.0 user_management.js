@@ -10,7 +10,7 @@ const email_helper = require(`../../controllers/helpers/email_helper`);
 // const redis = require(`../../resources/redis`)
 
 /**
- * API 2.1.0 Create a user
+ * API 2.1.1 Create a user
  */
 router.post(`/`, async function (req, res, next) {
     let con;
@@ -43,13 +43,6 @@ router.post(`/`, async function (req, res, next) {
 
         await qp.commitAndCloseConnection(con);
 
-        // redis
-        // const key_array = Object.keys(user_dao);
-        // for (const key of key_array) {
-        //     if (key !== "id") {
-        //         await redis.setTableRow(`user${user_dao.id}`, key, user_dao[key]);
-        //     }
-        // }
         res.json(rb.build(body, `user created.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
@@ -58,7 +51,7 @@ router.post(`/`, async function (req, res, next) {
 });
 
 /**
- * API 2.2.0 Update a user
+ * API 2.2.1 Update a user
  */
 router.put(`/:id`, async function (req, res, next) {
     let con;
@@ -67,38 +60,27 @@ router.put(`/:id`, async function (req, res, next) {
         if (req.user.role !== "ADMIN") {
             throw new Error("User has no access!");
         }
+        const id = req.params.id;
         con = await qp.connectWithTbegin();
-        await common_helper.checkItemDuplicate(`user`, `username`, body.username, con); //table_name, column name, column value, con, id optional
-        await common_helper.checkItemDuplicate(`user`, `email`, body.email, con); //table_name, column name, column value, con, id optional
-
-        let id = await id_helper(con, `user`, true);
-
+        const user = await qp.selectCheckFirst(`user`, { is_available: true, id: id }, con, function () {
+            throw new Error(`User ${id} does not exist.`);
+        });
+        await common_helper.checkItemDuplicate(`user`, `username`, body.username, con, id); //table_name, column name, column value, con, id optional
         // generate password and save
-        let password = common_helper.generateRandomPassword(10, true, true);
-        let hashed_password = passwordHash.generate(password);
 
         body.id = id;
-        body.password = hashed_password;
+        delete body.password;
+        body.email = user.email;
 
         // user dao builder
         let user_builder = await qp.getBuilderSingleton(`user`, con);
         let user_dao = user_builder.construct(body);
 
-        await qp.run(`insert into user set ? `, [user_dao], con);
-
-        // send password to new user
-        await email_helper.newUserPassword(user_dao, password, con);
+        await qp.run(`update user set ? where id = ? and is_available`, [user_dao, id], con);
 
         await qp.commitAndCloseConnection(con);
 
-        // redis
-        // const key_array = Object.keys(user_dao);
-        // for (const key of key_array) {
-        //     if (key !== "id") {
-        //         await redis.setTableRow(`user${user_dao.id}`, key, user_dao[key]);
-        //     }
-        // }
-        res.json(rb.build(body, `user created.`));
+        res.json(rb.build(body, `user Updated.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
@@ -106,47 +88,34 @@ router.put(`/:id`, async function (req, res, next) {
 });
 
 /**
- * API 2.3.0 delete a user
+ * API 2.3.1 delete a user
  */
 router.delete(`/:id`, async function (req, res, next) {
     let con;
     try {
-        let body = { ...req.body };
         if (req.user.role !== "ADMIN") {
             throw new Error("User has no access!");
         }
+        const id = req.params.id;
         con = await qp.connectWithTbegin();
-        await common_helper.checkItemDuplicate(`user`, `username`, body.username, con); //table_name, column name, column value, con, id optional
-        await common_helper.checkItemDuplicate(`user`, `email`, body.email, con); //table_name, column name, column value, con, id optional
-
-        let id = await id_helper(con, `user`, true);
-
-        // generate password and save
-        let password = common_helper.generateRandomPassword(10, true, true);
-        let hashed_password = passwordHash.generate(password);
-
-        body.id = id;
-        body.password = hashed_password;
-
+        const user = await qp.selectCheckFirst(`user`, { is_available: true, id: id }, con, function () {
+            throw new Error(`User ${id} does not exist.`);
+        });
+        if (user.role === "ADMIN") {
+            throw new Error("User cannot be deleted!");
+        }
         // user dao builder
-        let user_builder = await qp.getBuilderSingleton(`user`, con);
-        let user_dao = user_builder.construct(body);
+        const body = {
+            username: user.username + moment().format("YYYYMMDDHHmmss"),
+            email: user.email + moment().format("YYYYMMDDHHmmss"),
+            contact: user.contact + moment().format("YYYYMMDDHHmmss"),
+            is_available: false,
+        }
 
-        await qp.run(`insert into user set ? `, [user_dao], con);
-
-        // send password to new user
-        await email_helper.newUserPassword(user_dao, password, con);
+        await qp.run(`update user set ? where id = ? and is_available and role != "ADMIN"`, [body, id], con);
 
         await qp.commitAndCloseConnection(con);
-
-        // redis
-        // const key_array = Object.keys(user_dao);
-        // for (const key of key_array) {
-        //     if (key !== "id") {
-        //         await redis.setTableRow(`user${user_dao.id}`, key, user_dao[key]);
-        //     }
-        // }
-        res.json(rb.build(body, `user created.`));
+        res.json(rb.build({}, `user deleted.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
@@ -154,55 +123,7 @@ router.delete(`/:id`, async function (req, res, next) {
 });
 
 /**
- * API 2.3.0 delete a user
- */
-router.put(`/toggle/:id`, async function (req, res, next) {
-    let con;
-    try {
-        let body = { ...req.body };
-        if (req.user.role !== "ADMIN") {
-            throw new Error("User has no access!");
-        }
-        con = await qp.connectWithTbegin();
-        await common_helper.checkItemDuplicate(`user`, `username`, body.username, con); //table_name, column name, column value, con, id optional
-        await common_helper.checkItemDuplicate(`user`, `email`, body.email, con); //table_name, column name, column value, con, id optional
-
-        let id = await id_helper(con, `user`, true);
-
-        // generate password and save
-        let password = common_helper.generateRandomPassword(10, true, true);
-        let hashed_password = passwordHash.generate(password);
-
-        body.id = id;
-        body.password = hashed_password;
-
-        // user dao builder
-        let user_builder = await qp.getBuilderSingleton(`user`, con);
-        let user_dao = user_builder.construct(body);
-
-        await qp.run(`insert into user set ? `, [user_dao], con);
-
-        // send password to new user
-        await email_helper.newUserPassword(user_dao, password, con);
-
-        await qp.commitAndCloseConnection(con);
-
-        // redis
-        // const key_array = Object.keys(user_dao);
-        // for (const key of key_array) {
-        //     if (key !== "id") {
-        //         await redis.setTableRow(`user${user_dao.id}`, key, user_dao[key]);
-        //     }
-        // }
-        res.json(rb.build(body, `user created.`));
-    } catch (err) {
-        if (con) await qp.rollbackAndCloseConnection(con);
-        next(err);
-    }
-});
-
-/**
- * API 2.1.5 Get single user
+ * API 2.4.1 Get single user
  */
 router.get(`/:id`, async function (req, res, next) {
     let con;
