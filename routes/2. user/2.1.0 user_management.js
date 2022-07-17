@@ -16,6 +16,9 @@ router.post(`/`, async function (req, res, next) {
     let con;
     try {
         let body = { ...req.body };
+        if (req.user.role !== "ADMIN") {
+            throw new Error("User has no access!");
+        }
         con = await qp.connectWithTbegin();
         await common_helper.checkItemDuplicate(`user`, `username`, body.username, con); //table_name, column name, column value, con, id optional
         await common_helper.checkItemDuplicate(`user`, `email`, body.email, con); //table_name, column name, column value, con, id optional
@@ -53,8 +56,153 @@ router.post(`/`, async function (req, res, next) {
         next(err);
     }
 });
+
 /**
- * API 2.1.3 Get single user
+ * API 2.2.0 Update a user
+ */
+router.put(`/:id`, async function (req, res, next) {
+    let con;
+    try {
+        let body = { ...req.body };
+        if (req.user.role !== "ADMIN") {
+            throw new Error("User has no access!");
+        }
+        con = await qp.connectWithTbegin();
+        await common_helper.checkItemDuplicate(`user`, `username`, body.username, con); //table_name, column name, column value, con, id optional
+        await common_helper.checkItemDuplicate(`user`, `email`, body.email, con); //table_name, column name, column value, con, id optional
+
+        let id = await id_helper(con, `user`, true);
+
+        // generate password and save
+        let password = common_helper.generateRandomPassword(10, true, true);
+        let hashed_password = passwordHash.generate(password);
+
+        body.id = id;
+        body.password = hashed_password;
+
+        // user dao builder
+        let user_builder = await qp.getBuilderSingleton(`user`, con);
+        let user_dao = user_builder.construct(body);
+
+        await qp.run(`insert into user set ? `, [user_dao], con);
+
+        // send password to new user
+        await email_helper.newUserPassword(user_dao, password, con);
+
+        await qp.commitAndCloseConnection(con);
+
+        // redis
+        // const key_array = Object.keys(user_dao);
+        // for (const key of key_array) {
+        //     if (key !== "id") {
+        //         await redis.setTableRow(`user${user_dao.id}`, key, user_dao[key]);
+        //     }
+        // }
+        res.json(rb.build(body, `user created.`));
+    } catch (err) {
+        if (con) await qp.rollbackAndCloseConnection(con);
+        next(err);
+    }
+});
+
+/**
+ * API 2.3.0 delete a user
+ */
+router.delete(`/:id`, async function (req, res, next) {
+    let con;
+    try {
+        let body = { ...req.body };
+        if (req.user.role !== "ADMIN") {
+            throw new Error("User has no access!");
+        }
+        con = await qp.connectWithTbegin();
+        await common_helper.checkItemDuplicate(`user`, `username`, body.username, con); //table_name, column name, column value, con, id optional
+        await common_helper.checkItemDuplicate(`user`, `email`, body.email, con); //table_name, column name, column value, con, id optional
+
+        let id = await id_helper(con, `user`, true);
+
+        // generate password and save
+        let password = common_helper.generateRandomPassword(10, true, true);
+        let hashed_password = passwordHash.generate(password);
+
+        body.id = id;
+        body.password = hashed_password;
+
+        // user dao builder
+        let user_builder = await qp.getBuilderSingleton(`user`, con);
+        let user_dao = user_builder.construct(body);
+
+        await qp.run(`insert into user set ? `, [user_dao], con);
+
+        // send password to new user
+        await email_helper.newUserPassword(user_dao, password, con);
+
+        await qp.commitAndCloseConnection(con);
+
+        // redis
+        // const key_array = Object.keys(user_dao);
+        // for (const key of key_array) {
+        //     if (key !== "id") {
+        //         await redis.setTableRow(`user${user_dao.id}`, key, user_dao[key]);
+        //     }
+        // }
+        res.json(rb.build(body, `user created.`));
+    } catch (err) {
+        if (con) await qp.rollbackAndCloseConnection(con);
+        next(err);
+    }
+});
+
+/**
+ * API 2.3.0 delete a user
+ */
+router.put(`/toggle/:id`, async function (req, res, next) {
+    let con;
+    try {
+        let body = { ...req.body };
+        if (req.user.role !== "ADMIN") {
+            throw new Error("User has no access!");
+        }
+        con = await qp.connectWithTbegin();
+        await common_helper.checkItemDuplicate(`user`, `username`, body.username, con); //table_name, column name, column value, con, id optional
+        await common_helper.checkItemDuplicate(`user`, `email`, body.email, con); //table_name, column name, column value, con, id optional
+
+        let id = await id_helper(con, `user`, true);
+
+        // generate password and save
+        let password = common_helper.generateRandomPassword(10, true, true);
+        let hashed_password = passwordHash.generate(password);
+
+        body.id = id;
+        body.password = hashed_password;
+
+        // user dao builder
+        let user_builder = await qp.getBuilderSingleton(`user`, con);
+        let user_dao = user_builder.construct(body);
+
+        await qp.run(`insert into user set ? `, [user_dao], con);
+
+        // send password to new user
+        await email_helper.newUserPassword(user_dao, password, con);
+
+        await qp.commitAndCloseConnection(con);
+
+        // redis
+        // const key_array = Object.keys(user_dao);
+        // for (const key of key_array) {
+        //     if (key !== "id") {
+        //         await redis.setTableRow(`user${user_dao.id}`, key, user_dao[key]);
+        //     }
+        // }
+        res.json(rb.build(body, `user created.`));
+    } catch (err) {
+        if (con) await qp.rollbackAndCloseConnection(con);
+        next(err);
+    }
+});
+
+/**
+ * API 2.1.5 Get single user
  */
 router.get(`/:id`, async function (req, res, next) {
     let con;
@@ -77,6 +225,7 @@ router.get(`/:id`, async function (req, res, next) {
         next(err);
     }
 });
+
 
 
 module.exports = router;
