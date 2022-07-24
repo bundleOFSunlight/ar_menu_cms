@@ -53,7 +53,7 @@ async function sendGoogleEmail(to_email_list, subject, content, type, con, cc, b
                 clientId: process.env.CLIENT_ID,
                 clientSecret: process.env.CLIENT_SECRET,
                 refreshToken: process.env.REFRESH_TOKEN,
-                accessToken: accessToken
+                accessToken: accessToken,
             }
         });
 
@@ -75,6 +75,7 @@ async function sendGoogleEmail(to_email_list, subject, content, type, con, cc, b
             type: type,
             content: content,
         };
+
         await qp.run(`insert into email_record set ?`, [email_log_dao], con);
         return result;
     } catch (err) {
