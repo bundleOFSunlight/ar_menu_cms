@@ -10,6 +10,32 @@ const email_helper = require(`../../controllers/helpers/email_helper`);
 // const redis = require(`../../resources/redis`)
 
 /**
+ * API 2.1.0 Create a user
+ */
+router.post(`/datatable`, async function (req, res, next) {
+    let con;
+    try {
+        let body = { ...req.body };
+        if (req.user.role !== "ADMIN") {
+            throw new Error("User has no access!");
+        }
+
+        con = await qp.connectWithTbegin();
+        const params = {}
+        const all_query = `SELECT * FROM user where is_available`;
+        const search_query = all_query;
+        res.json(await rb.buildTable(body, search_query, all_query, params));
+
+        await qp.commitAndCloseConnection(con);
+
+        // res.json(rb.build(body, `user retrieved.`));
+    } catch (err) {
+        if (con) await qp.rollbackAndCloseConnection(con);
+        next(err);
+    }
+});
+
+/**
  * API 2.1.1 Create a user
  */
 router.post(`/`, async function (req, res, next) {
@@ -90,13 +116,13 @@ router.put(`/:id`, async function (req, res, next) {
 /**
  * API 2.3.1 delete a user
  */
-router.delete(`/:id`, async function (req, res, next) {
+router.delete(`/`, async function (req, res, next) {
     let con;
     try {
         if (req.user.role !== "ADMIN") {
             throw new Error("User has no access!");
         }
-        const id = req.params.id;
+        const id = req.body.id;
         con = await qp.connectWithTbegin();
         const user = await qp.selectCheckFirst(`user`, { is_available: true, id: id }, con, function () {
             throw new Error(`User ${id} does not exist.`);
@@ -115,7 +141,7 @@ router.delete(`/:id`, async function (req, res, next) {
         await qp.run(`update user set ? where id = ? and is_available and role != "ADMIN"`, [body, id], con);
 
         await qp.commitAndCloseConnection(con);
-        res.json(rb.build({}, `user deleted.`));
+        res.json(rb.build({}, `User deleted.`));
     } catch (err) {
         if (con) await qp.rollbackAndCloseConnection(con);
         next(err);
