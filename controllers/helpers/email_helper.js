@@ -13,7 +13,7 @@ async function newUserPassword(user_dao, password, con) {
         <p>Hi ${user_dao.username}</P>
         <p>You are invited to AR Menu portal</P>
         <p>Use following passord to <a href=#>login</a></P>
-        <p>${password}</P>
+        <p>Password: ${password}</P>
         <p></P>
         <p>Regards</P>
         `
