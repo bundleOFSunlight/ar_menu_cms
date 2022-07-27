@@ -80,18 +80,21 @@ router.post(`/`, async function (req, res, next) {
 /**
  * API 2.2.1 Update a user
  */
-router.put(`/:id`, async function (req, res, next) {
+router.put(`/`, async function (req, res, next) {
     let con;
     try {
         let body = { ...req.body };
         if (req.user.role !== "ADMIN") {
             throw new Error("User has no access!");
         }
-        const id = req.params.id;
+        const id = req.body.id;
         con = await qp.connectWithTbegin();
         const user = await qp.selectCheckFirst(`user`, { is_available: true, id: id }, con, function () {
             throw new Error(`User ${id} does not exist.`);
         });
+        if (user.role === "ADMIN") {
+            throw new Error(`Admin role cannot be updated.`);
+        }
         await common_helper.checkItemDuplicate(`user`, `username`, body.username, con, id); //table_name, column name, column value, con, id optional
         // generate password and save
 
@@ -162,7 +165,7 @@ router.get(`/:id`, async function (req, res, next) {
         });
         const user = await qp.selectFirst(
             `select u.id, u.first_name, u.last_name, u.username, u.email, u.contact, u.gender,
-            u.role, u.last_login, u.is_active from user u where u.is_available and u.id = ?`,
+            u.role, u.last_login, u.is_active from user u where u.is_available and role != "ADMIN" and u.id = ?`,
             [id],
             con,
         );
