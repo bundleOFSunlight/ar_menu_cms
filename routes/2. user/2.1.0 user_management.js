@@ -57,6 +57,7 @@ router.post(`/`, async function (req, res, next) {
 
         body.id = id;
         body.password = hashed_password;
+        body.role = "STAFF"
 
         // user dao builder
         let user_builder = await qp.getBuilderSingleton(`user`, con);
