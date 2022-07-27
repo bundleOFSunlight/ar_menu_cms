@@ -22,7 +22,7 @@ router.post(`/datatable`, async function (req, res, next) {
 
         con = await qp.connectWithTbegin();
         const params = {}
-        const all_query = `SELECT * FROM user where is_available`;
+        const all_query = `SELECT * FROM user where is_available and role != "ADMIN"`;
         const search_query = all_query;
         res.json(await rb.buildTable(body, search_query, all_query, params));
 
