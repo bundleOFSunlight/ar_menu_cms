@@ -88,6 +88,7 @@ router.put(`/`, async function (req, res, next) {
             throw new Error("User has no access!");
         }
         const id = req.body.id;
+        body.role = "STAFF"
         con = await qp.connectWithTbegin();
         const user = await qp.selectCheckFirst(`user`, { is_available: true, id: id }, con, function () {
             throw new Error(`User ${id} does not exist.`);
