@@ -161,7 +161,7 @@ router.get(`/:id`, async function (req, res, next) {
             throw new Error(`User ${id} does not exist.`);
         });
         const user = await qp.selectFirst(
-            `select u.id, u.first_name, u.last_name, u.username, u.email, u.contact,
+            `select u.id, u.first_name, u.last_name, u.username, u.email, u.contact, u.gender,
             u.role, u.last_login, u.is_active from user u where u.is_available and u.id = ?`,
             [id],
             con,
