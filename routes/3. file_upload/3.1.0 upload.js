@@ -3,7 +3,7 @@ let router = express.Router();
 let rb = require("@flexsolver/flexrb");
 let multer = require("multer");
 let fs = require("fs");
-const upload = multer({ dest: 'uploads/' })
+const upload = multer()
 const cloudinary = require("../../resources/cloudinary")
 
 /**
