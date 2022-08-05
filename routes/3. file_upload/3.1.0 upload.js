@@ -18,6 +18,7 @@ router.post(`/`, upload.single('mind_ar'), async function (req, res, next) {
         const result = await cloudinary.uploader(file)
         const file_path = path.join(__dirname, `../../uploads`)
         fs.rmSync(file_path, { recursive: true });
+        fs.mkdirSync(file_path)
         res.json(rb.build({ url: result.secure_url }, `File has been uploaded.`));
     } catch (error) {
         next(error);
