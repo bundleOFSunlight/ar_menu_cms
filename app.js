@@ -133,7 +133,7 @@ function logResponseBody(req, res, next) {
 					dao.req = '{}';
 				}
 				req.insertId > 0 ? (dao.id = req.insertId) : delete dao.id;
-				await qp.run(`insert into activity_log set ? on duplicate key update ?`, [dao, dao]);
+				// await qp.run(`insert into activity_log set ? on duplicate key update ?`, [dao, dao]);
 				oldEnd.apply(res, arguments);
 			} catch (err) {
 				oldEnd.apply(res, arguments);
