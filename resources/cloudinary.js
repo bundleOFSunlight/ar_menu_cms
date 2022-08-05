@@ -22,7 +22,8 @@ async function uploader(file) {
             resource_type: "auto", // resource_type: "auto"
             public_id: `mind_ar/${file_name}/${uuidv4()}`,
         }
-        return await cloudinary.v2.uploader.upload(image_path, upload_dao);
+        const url = await cloudinary.v2.uploader.upload(image_path, upload_dao);
+        return url;
     } catch (err) {
         throw err
     }
