@@ -22,7 +22,6 @@ router.post(`/`, upload.single('mind_ar'), async function (req, res, next) {
         res.json(rb.build({ url: result.secure_url }, `File has been uploaded.`));
     } catch (error) {
         next(error);
-
     }
 });
 
