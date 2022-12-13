@@ -267,7 +267,8 @@ router.get(`/qr_code/:id`, async function (req, res, next) {
             throw new Error(`Project does not exist.`);
         })
         await qp.commitAndCloseConnection(con);
-        const url = project.is_antique ? process.env.MENU_URL + `/${project.public_key}` : process.env.MENU_URL + `/antique/${project.public_key}`;
+        console.log("antique: " + project.is_antique)
+        const url = project.is_antique ? process.env.MENU_URL + `/antique/${project.public_key}` : process.env.MENU_URL + `/${project.public_key}`;
         const doc_definition = await download_pdf(url);
         const file_name = `QR_CODE` + moment().format('YYYYMMDDHHmmss') + '.pdf';
         const pdf_doc = printer.createPdfKitDocument(doc_definition);
